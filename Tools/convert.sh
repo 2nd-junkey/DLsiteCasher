@@ -1,33 +1,36 @@
 #!/bin/bash
 
+# 引数を対象サークルのパスとして対応
 cd "$1"
-SOURCE="$PWD"
-echo "$SOURCE"
+$SOURCEPATH="$PWD"
+echo "$SOURCEPATH"
+
+# 一時避難先のパス
 OUTPUTPATH="$(mktemp -d)"
 echo "$OUTPUTPATH"
-find -mindepth 2 -maxdepth 2 -type d | while read -r dname
-do
-	# echo "$dname"
-	SOURCEPATH="$SOURCE/$dname"
 
-	cd "$SOURCEPATH"
-	mv -v * "$OUTPUTPATH/"
-	git init --bare
+# 掃い出し
+cd "$SOURCEPATH"
+mv -v * "$OUTPUTPATH/"
 
-	cd "$OUTPUTPATH"
-	git init
-	git config core.autocrlf false
-	find . -type d -empty -exec touch "{}/.gitkeep" \;
-	git add .
-	git commit -m init
-	git remote add origin "$SOURCEPATH"
-	git push --set-upstream origin master
-	rm -vfr *
-	rm -vfr ./.*
-done
+# ベアリポジトリに変換
+git init --bare
 
-cd "$SOURCE"
-rm "$OUTPUTPATH"
+# リポジトリ登録
+cd "$OUTPUTPATH"
+git init
+# 登録前のあれこれ
+git config core.autocrlf false
+find . -type d -empty -exec touch "{}/.gitkeep" \;
+git add .
+# メッセージはﾃｷﾄｰ
+git commit -m init
+git remote add origin "$SOURCEPATH"
+git push --set-upstream origin master
+
+# 後処理
+cd "$SOURCEPATH"
+rm -vfr "$OUTPUTPATH"
 
 exit $?
 
